@@ -1,0 +1,47 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+from collections import namedtuple
+n_groups = 5
+score_MNB = (85.25, 85.31, 85.56, 84.95, 85.31)
+score_LR = (88.12, 88.05, 87.54, 88.72, 88.05)
+score_LSVC=(88.12, 88.11, 87.59, 88.80, 88.11)
+score_RF=(82.43, 81.82, 79.74, 85.30, 81.83)
+#n1=(score_MNB[0], score_LR[0], score_LSVC[0], score_RF[0])
+#n2=(score_MNB[1], score_LR[1], score_LSVC[1], score_RF[1])
+#n3=(score_MNB[2], score_LR[2], score_LSVC[2], score_RF[2])
+#n4=(score_MNB[3], score_LR[3], score_LSVC[3], score_RF[3])
+#n5=(score_MNB[4], score_LR[4], score_LSVC[4], score_RF[4])
+fig, ax = plt.subplots()
+index = np.arange(n_groups)
+bar_width = 0.1
+opacity = 0.7
+error_config = {'ecolor': '0.3'}
+rects1 = ax.bar(index,score_MNB, bar_width,
+ alpha=opacity, color='b',
+37
+ error_kw=error_config,
+ label='Multinomial Naive Bayes')
+z=index + bar_width
+rects2 = ax.bar(z, score_LR, bar_width,
+ alpha=opacity, color='r',
+ error_kw=error_config,
+ label='Logistic Regression')
+z=z+ bar_width
+rects3 = ax.bar(z, score_LSVC, bar_width,
+ alpha=opacity, color='y',
+ error_kw=error_config,
+ label='Linear SVM')
+z=z+ bar_width
+rects4 = ax.bar(z, score_RF, bar_width,
+ alpha=opacity, color='g',
+ error_kw=error_config,
+ label='Random Forest')
+ax.set_xlabel('Score Parameters')
+ax.set_ylabel('Scores (in %)')
+ax.set_title('Scores of Classifiers')
+ax.set_xticks(index + bar_width / 2)
+ax.set_xticklabels(('F1', 'Accuracy', 'Precision', 'Recall', 'ROC AUC'))
+ax.legend(bbox_to_anchor=(1, 1.02), loc=5, borderaxespad=0)
+fig.tight_layout()
+plt.show()

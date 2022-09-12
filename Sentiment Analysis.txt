@@ -1,0 +1,105 @@
+import ast
+import numpy as np
+import pandas as pd
+import re
+from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
+from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest, chi2, SelectPercentile, f_classif
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
+confusion_matrix
+from sklearn.svm import LinearSVC
+# from textblob import TextBlob
+from time import time
+def getInitialData(data_file):
+print('Fetching initial data...')
+t = time()
+i = 0
+df = {}
+with open(data_file, 'r') as file_handler:
+for review in file_handler.readlines():
+df[i] = ast.literal_eval(review)
+i += 1
+reviews_df = pd.DataFrame.from_dict(df, orient = 'index')
+reviews_df.to_pickle('reviews_digital_music.pickle')
+33
+print('Fetching data completed!')
+print('Fetching time: ', round(time()-t, 3), 's\n')
+# def filterLanguage(text):
+# text_blob = TextBlob(text)
+# return text_blob.detect_language()
+def prepareData(reviews_df):
+print('Preparing data...')
+t = time()
+reviews_df.rename(columns = {"overall" : "reviewRating"}, inplace=True)
+reviews_df.drop(columns = ['reviewerID', 'asin', 'reviewerName', 'helpful', 'summary',
+'unixReviewTime', 'reviewTime'], inplace = True)
+reviews_df = reviews_df[reviews_df.reviewRating != 3.0] # Ignoring 3-star reviews -> neutral
+reviews_df = reviews_df.assign(sentiment = np.where(reviews_df['reviewRating'] >= 4.0, 1, 0)) # 1
+-> Positive, 0 -> Negative
+stemmer = SnowballStemmer('english')
+stop_words = stopwords.words('english')
+# print(len(reviews_df.reviewText))
+# filterLanguage = lambda text: TextBlob(text).detect_language()
+# reviews_df = reviews_df[reviews_df['reviewText'].apply(filterLanguage) == 'en']
+# print(len(reviews_df.reviewText))
+reviews_df = reviews_df.assign(cleaned = reviews_df['reviewText'].apply(lambda text: '
+'.join([stemmer.stem(w) for w in re.sub('[^a-z]+|(quot)+', ' ', text.lower()).split() if w not in stop_words])))
+reviews_df.to_pickle('reviews_digital_music_preprocessed.pickle')
+34
+print('Preparing data completed!')
+print('Preparing time: ', round(time()-t, 3), 's\n')
+def preprocessData(reviews_df_preprocessed):
+print('Preprocessing data...')
+t = time()
+X = reviews_df_preprocessed.iloc[:, -1].values
+y = reviews_df_preprocessed.iloc[:, -2].values
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+print('Preprocessing data completed!')
+print('Preprocessing time: ', round(time()-t, 3), 's\n')
+return X_train, X_test, y_train, y_test
+def evaluate(y_test, prediction):
+print('Evaluating results...')
+t = time()
+print('Accuracy: {}'.format(accuracy_score(y_test, prediction)))
+print('Precision: {}'.format(precision_score(y_test, prediction)))
+print('Recall: {}'.format(recall_score(y_test, prediction)))
+print('f1: {}'.format(f1_score(y_test, prediction)))
+print('Results evaluated!')
+print('Evaluation time: ', round(time()-t, 3), 's\n')
+# getInitialData('datasets/reviews_digital_music.json')
+# reviews_df = pd.read_pickle('reviews_digital_music.pickle')
+35
+# prepareData(reviews_df)
+reviews_df_preprocessed = pd.read_pickle('reviews_digital_music_preprocessed.pickle')
+# print(reviews_df_preprocessed.isnull().values.sum()) # Check for any null values
+X_train, X_test, y_train, y_test = preprocessData(reviews_df_preprocessed)
+print('Training data...')
+t = time()
+pipeline = Pipeline([
+('vect', TfidfVectorizer(ngram_range = (1,2), stop_words = 'english',
+sublinear_tf = True)),
+('chi', SelectKBest(score_func = chi2, k = 50000)),
+('clf', LinearSVC(C = 1.0, penalty = 'l1', max_iter = 3000, dual = False,
+class_weight = 'balanced'))
+])
+model = pipeline.fit(X_train, y_train)
+print('Training data completed!')
+print('Training time: ', round(time()-t, 3), 's\n')
+print('Predicting Test data...')
+t = time()
+prediction = model.predict(X_test)
+print('Prediction completed!')
+print('Prediction time: ', round(time()-t, 3), 's\n')
+evaluate(y_test, prediction)
+print('Confusion matrix: {}'.format(confusion_matrix(y_test, prediction)))
+36
+print()
+l = (y_test == 0).sum() + (y_test == 1).sum()
+s = y_test.sum()
+print('Total number of observations: ' + str(l))
+print('Positives in observation: ' + str(s))
+print('Negatives in observation: ' + str(l - s))
+print('Majority class is: ' + str(s / l * 100) + '%')

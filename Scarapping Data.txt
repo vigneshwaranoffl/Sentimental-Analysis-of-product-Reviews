@@ -1,0 +1,56 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from bs4 import BeautifulSoup
+import openpyxl
+class Review():
+def __init__(self):
+29
+self.rating=""
+self.info=""
+self.review=""
+def scrape():
+options = Options()
+options.add_argument("--headless") # Runs Chrome in headless mode.
+options.add_argument('--no-sandbox') # # Bypass OS security model
+options.add_argument('start-maximized')
+options.add_argument('disable-infobars')
+options.add_argument("--disable-extensions")
+driver=webdriver.Chrome(executable_path=r'C:\chromedriver\chromedriver.exe')
+url='https://www.amazon.com/Moto-PLUS-5th-Generation-Exclusive/productreviews/B0785NN142/ref=cm_cr_arp_d_paging_btm_2?ie=UTF8&reviewerType=all_reviews&pageNumb
+er=5'
+driver.get(url)
+soup=BeautifulSoup(driver.page_source,'lxml')
+ul=soup.find_all('div',class_='a-section review')
+review_list=[]
+for d in ul:
+a=d.find('div',class_='a-row')
+sib=a.findNextSibling()
+b=d.find('div',class_='a-row a-spacing-medium review-data')
+'''print sib.text'''
+new_r=Review()
+new_r.rating=a.text
+new_r.info=sib.text
+new_r.review=b.text
+review_list.append(new_r)
+driver.quit()
+return review_list
+def main():
+30
+m = scrape()
+i=1
+for r in m:
+book = openpyxl.load_workbook('Sample.xlsx')
+sheet = book.get_sheet_by_name('Sample Sheet')
+sheet.cell(row=i, column=1).value = r.rating
+sheet.cell(row=i, column=1).alignment = openpyxl.styles.Alignment(horizontal='center',
+vertical='center', wrap_text=True)
+sheet.cell(row=i, column=3).value = r.info
+sheet.cell(row=i, column=3).alignment = openpyxl.styles.Alignment(horizontal='center',
+vertical='center', wrap_text=True)
+sheet.cell(row=i, column=5).value = r.review.encode('utf-8')
+sheet.cell(row=i, column=5).alignment = openpyxl.styles.Alignment(horizontal='center',
+vertical='center', wrap_text=True)
+book.save('Sample.xlsx')
+i=i+1
+if __name__ == '__main__':
+ main()

@@ -1,0 +1,45 @@
+import json
+import pickle
+import numpy as np
+from matplotlib import pyplot as plt
+from textblob import TextBlob
+# fileHandler = open('datasets/reviews_digital_music.json', 'r')
+# reviewDatas = fileHandler.read().split('\n')
+# reviewText = []
+# reviewRating = []
+# for review in reviewDatas:
+# if review == "":
+# continue
+# r = json.loads(review)
+# reviewText.append(r['reviewText'])
+# reviewRating.append(r['overall'])
+# fileHandler.close()
+# saveReviewText = open('review_text.pkl', 'wb')
+# saveReviewRating = open('review_rating.pkl','wb')
+# pickle.dump(reviewText, saveReviewText)
+# pickle.dump(reviewRating, saveReviewRating)
+reviewTextFile = open('review_text.pkl', 'rb')
+28
+reviewRatingFile = open('review_rating.pkl', 'rb')
+reviewText = pickle.load(reviewTextFile)
+reviewRating = pickle.load(reviewRatingFile)
+# print(len(reviewText))
+# print(reviewText[0])
+# print(reviewRating[0])
+# ratings = np.array(reviewRating)
+plt.hist(ratings, bins=np.arange(ratings.min(), ratings.max()+2)-0.5, rwidth=0.7)
+plt.xlabel('Rating', fontsize=14)
+plt.ylabel('Frequency', fontsize=14)
+plt.title('Histogram of Ratings', fontsize=18)
+plt.show()
+lang = {}
+i = 0
+for review in reviewText:
+tb = TextBlob(review)
+l = tb.detect_language()
+if l != 'en':
+lang.setdefault(l, [])
+lang[l].append(i)
+print(i, l)
+i += 1
+print(lang)
